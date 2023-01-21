@@ -202,7 +202,10 @@ def task_object_images(obj_id):
 CORS(main_blueprint, resources={"/fits/header*": cors_post_config})
 @main_blueprint.route("/fits/header", methods=["POST"])
 def task_fits_header():
-  fits_file = request.form["fits_file"]
+  if request.content_type == "application/json":
+    fits_file = request.json["fits_file"]
+  else:
+   fits_file = request.form["fits_file"]
   with Connection(redis.from_url(current_app.config["REDIS_URL"])):
     q = Queue()
     task = q.enqueue(coma_fits_header, fits_file)
