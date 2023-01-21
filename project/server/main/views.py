@@ -217,7 +217,10 @@ def task_fits_header():
 CORS(main_blueprint, resources={"/fits/describe*": cors_post_config})
 @main_blueprint.route("/fits/describe", methods=["POST"])
 def task_fits_describe():
-  fits_file = request.form["fits_file"]
+  if request.content_type == "application/json":
+    fits_file = request.json["fits_file"]
+  else:
+   fits_file = request.form["fits_file"]
   with Connection(redis.from_url(current_app.config["REDIS_URL"])):
     q = Queue()
     task = q.enqueue(coma_fits_describe, fits_file)
@@ -232,10 +235,16 @@ def task_fits_describe():
 CORS(main_blueprint, resources={"/fits/photometry*": cors_post_config})
 @main_blueprint.route("/fits/photometry", methods=["POST"])
 def task_fits_photometry():
-  fits_file = request.form["fits_file"]
-  objid = request.form["object"]
-  method = request.form["method"]
-  aperture = request.form["aperture"]
+  if request.content_type == "application/json":
+    fits_file = request.json["fits_file"]
+    objid = request.json["object"]
+    method = request.json["method"]
+    aperture = request.json["aperture"]
+  else:
+    fits_file = request.form["fits_file"]
+    objid = request.form["object"]
+    method = request.form["method"]
+    aperture = request.form["aperture"]
   with Connection(redis.from_url(current_app.config["REDIS_URL"])):
     q = Queue()
     task = q.enqueue(coma_fits_photometry, fits_file, objid, method, aperture)
@@ -250,7 +259,10 @@ def task_fits_photometry():
 CORS(main_blueprint, resources={"/fits/calibrate*": cors_post_config})
 @main_blueprint.route("/fits/calibrate", methods=["POST"])
 def task_fits_calibrate():
-  fits_file = request.form["fits_file"]
+  if request.content_type == "application/json":
+    fits_file = request.json["fits_file"]
+  else:
+   fits_file = request.form["fits_file"]
   with Connection(redis.from_url(current_app.config["REDIS_URL"])):
     q = Queue()
     task = q.enqueue(coma_fits_calibrate, fits_file)
@@ -265,7 +277,10 @@ def task_fits_calibrate():
 CORS(main_blueprint, resources={"/job/run*": cors_post_config})
 @main_blueprint.route("/job/run", methods=["POST"])
 def task_run_job():
-  job = request.form["job"]
+  if request.content_type == "application/json":
+    job = request.json["job"]
+  else:
+    job = request.form["job"]
   response_object = job_tasks(job)
   response = jsonify(response_object)
   response.headers.add("Access-Control-Allow-Origin", "*")
@@ -285,7 +300,10 @@ def task_run_job():
 CORS(main_blueprint, resources={"/insert/telescope*": cors_post_config})
 @main_blueprint.route("/insert/telescope", methods=["POST"])
 def task_insert_telescope():
-  telescopeName = request.form["name"]
+  if request.content_type == "application/json":
+    telescopeName = request.json["name"]
+  else:
+     telescopeName = request.form["name"]
   with Connection(redis.from_url(current_app.config["REDIS_URL"])):
     q = Queue()
     task = q.enqueue(coma_insert_telescope, telescopeName)
