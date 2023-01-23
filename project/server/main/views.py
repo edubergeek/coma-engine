@@ -205,7 +205,7 @@ def task_fits_header():
   if request.content_type == "application/json":
     fits_file = request.json["fits_file"]
   else:
-   fits_file = request.form["fits_file"]
+    fits_file = request.form["fits_file"]
   with Connection(redis.from_url(current_app.config["REDIS_URL"])):
     q = Queue()
     task = q.enqueue(coma_fits_header, fits_file)
@@ -223,7 +223,7 @@ def task_fits_describe():
   if request.content_type == "application/json":
     fits_file = request.json["fits_file"]
   else:
-   fits_file = request.form["fits_file"]
+    fits_file = request.form["fits_file"]
   with Connection(redis.from_url(current_app.config["REDIS_URL"])):
     q = Queue()
     task = q.enqueue(coma_fits_describe, fits_file)
@@ -265,7 +265,7 @@ def task_fits_calibrate():
   if request.content_type == "application/json":
     fits_file = request.json["fits_file"]
   else:
-   fits_file = request.form["fits_file"]
+    fits_file = request.form["fits_file"]
   with Connection(redis.from_url(current_app.config["REDIS_URL"])):
     q = Queue()
     task = q.enqueue(coma_fits_calibrate, fits_file)
@@ -306,7 +306,7 @@ def task_insert_telescope():
   if request.content_type == "application/json":
     telescopeName = request.json["name"]
   else:
-     telescopeName = request.form["name"]
+    telescopeName = request.form["name"]
   with Connection(redis.from_url(current_app.config["REDIS_URL"])):
     q = Queue()
     task = q.enqueue(coma_insert_telescope, telescopeName)
