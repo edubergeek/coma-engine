@@ -7,7 +7,7 @@ from flask_cors import CORS
 
 import json
 
-from project.server.main.tasks import coma_object_images, coma_fits_header, coma_fits_describe, coma_fits_calibrate, coma_fits_photometry
+from project.server.main.tasks import coma_object_images, coma_fits_header, coma_fits_describe, coma_fits_calibrate, coma_fits_photometry, coma_lightcurve
 from project.server.main.tasks import coma_insert_telescope, coma_get_observatory, coma_get_telescope
 
 def job_tasks(job):
@@ -54,6 +54,14 @@ def list_routes():
         "url": "/routes", 
         "method": "GET",
         "description": "List of REST API URLs",
+      },
+      "lightcurve": {
+        "url": "/lightcurve",
+        "method": "POST",
+        "description": "Query an object light curve",
+        "object": "object identifier",
+        "begin": "begin date",
+        "end": "end date",
       },
       "objects": {
         "url": "/objects", 
@@ -342,4 +350,27 @@ def task_get_telescope(tel_id):
     "task": { "id": task.get_id() },
   }
   return jsonify(response_object), 202
+
+CORS(main_blueprint, resources={"/lightcurve*": cors_get_config})
+@main_blueprint.route("/lightcurve", methods=["POST"])
+def task_lightcurve():
+  if request.content_type == "application/json":
+    objid = request.json["object"]
+    begin_date = request.json["begin"]
+    end_date = request.json["end"]
+  else:
+    objid = request.form["object"]
+    begin_date = request.form["begin"]
+    end_date = request.form["end"]
+  with Connection(redis.from_url(current_app.config["REDIS_URL"])):
+    q = Queue()
+    task = q.enqueue(coma_lightcurve, objid, begin_date, end_date)
+  response_object = {
+    "status": "success",
+    "task": { "id": task.get_id() },
+  }
+  response = jsonify(response_object)
+  response.headers.add("Access-Control-Allow-Origin", "*")
+  return response, 202
+
 
