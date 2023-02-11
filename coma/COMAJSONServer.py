@@ -115,7 +115,7 @@ class COMAAPI:
   def DescribeFITS(self, fits):
     print(fits)
     params = "{ \"FITS-FILE\": \"%s\" }" % (fits)
-    self.SendRequest("describe-fits", params)
+    self.SendRequest("describe-fits-long", params)
     return self.GetResponse()
 
   def CalibrateFITSPhotometry(self, fits, objid, method, aperture):
