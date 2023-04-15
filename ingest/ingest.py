@@ -117,6 +117,8 @@ def MJDtoDate(mjd):
 def LookupObject(object):
   if object == 'C/2017 K2':
     return 1049
+  if object == '97ba6 R600':
+    return 700
   return 0
 
 def FilePath(fullpath):
@@ -127,14 +129,14 @@ def FileName(fullpath):
   file_name = basename(fullpath)
   return file_name
 
-def ImageRow(id, desc):
+def ImageRow(id, desc, objid):
   row = [id]
   row.append(desc['OBSCODE'])
   row.append(LookupTelescope(desc['INSTRUMENT']))
   row.append(LookupInstrument(desc['INSTRUMENT']))
   row.append('COMA')
   row.append(MJDtoDate(desc['MJD-MID']))
-  row.append(LookupObject(desc['OBJECT']))
+  row.append(objid)
   row.append(desc['OBSTYPE'])
   row.append(desc['MJD-MID'])
   row.append(desc['EXPTIME'])
@@ -191,7 +193,9 @@ if img_header:
   img_writer.writerow(header)
   img_header = False
 
-img_writer.writerow(ImageRow(args.id, description))
+objid = LookupObject(description['OBJECT'])
+if objid:
+  img_writer.writerow(ImageRow(args.id, description, objid))
 
 def CalibrationRow(id, desc, calib):
   row = [id]
