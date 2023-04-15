@@ -7,8 +7,8 @@ from flask_cors import CORS
 
 import json
 
-from project.server.main.tasks import coma_object_images, coma_fits_header, coma_fits_describe, coma_fits_calibrate, coma_fits_photometry, coma_lightcurve
-from project.server.main.tasks import coma_insert_telescope, coma_get_observatory, coma_get_telescope
+from project.server.main.tasks import coma_object_images, coma_fits_header, coma_fits_describe, coma_fits_calibrate, coma_fits_photometry, coma_lightcurve, coma_fits_meta
+from project.server.main.tasks import coma_insert_telescope, coma_get_observatory, coma_get_telescope, backend_pid
 
 def job_tasks(job):
   job_def = json.loads(job)
@@ -112,6 +112,15 @@ def list_routes():
         "object": "COMA id of the object, e.g. 9P",
         "method": "COMA photometry method, e.g. TheAperturePhotometry",
         "aperture": "radius/aperture, scalar or vector",
+      },
+      "fits-meta": {
+        "url": "/fits/meta",
+        "method": "POST",
+        "description": "Write metadata FITS header values",
+        "fits_file": "full path of FITS file",
+        "key": "header keyword",
+        "value": "header value",
+        "comment": "header comment",
       },
       "run-job": {
         "url": "/job/run",
@@ -235,6 +244,30 @@ def task_fits_describe():
   with Connection(redis.from_url(current_app.config["REDIS_URL"])):
     q = Queue()
     task = q.enqueue(coma_fits_describe, fits_file)
+  response_object = {
+    "status": "success",
+    "task": { "id": task.get_id() },
+  }
+  response = jsonify(response_object)
+  response.headers.add("Access-Control-Allow-Origin", "*")
+  return response, 202
+
+CORS(main_blueprint, resources={"/fits/meta*": cors_post_config})
+@main_blueprint.route("/fits/meta", methods=["POST"])
+def task_fits_meta():
+  if request.content_type == "application/json":
+    fits_file = request.json["fits_file"]
+    objid = request.json["key"]
+    method = request.json["value"]
+    aperture = request.json["comment"]
+  else:
+    fits_file = request.form["fits_file"]
+    objid = request.form["key"]
+    method = request.form["value"]
+    aperture = request.form["comment"]
+  with Connection(redis.from_url(current_app.config["REDIS_URL"])):
+    q = Queue()
+    task = q.enqueue(coma_fits_meta, fits_file, objid, method, aperture)
   response_object = {
     "status": "success",
     "task": { "id": task.get_id() },
@@ -373,4 +406,16 @@ def task_lightcurve():
   response.headers.add("Access-Control-Allow-Origin", "*")
   return response, 202
 
+
+CORS(main_blueprint, resources={"/backend/status*": cors_get_config})
+@main_blueprint.route("/backend/status", methods=["GET"])
+def backend_status():
+  response_object = {
+    "status": "success",
+    "backend": {
+      "pid": backend_pid(),
+#      "status": get_backend_status(),
+    },
+  }
+  return jsonify(response_object)
 
