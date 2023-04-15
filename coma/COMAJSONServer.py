@@ -57,6 +57,14 @@ class COMAAPI:
     if self.COMAServerPort == 0:
       self.pCOMAServer.kill()
 
+  def GetPID(self):
+    cmd = "ps -ef | grep coma-json-server | grep 5054 | head -1"
+    result = os.popen(cmd).read()
+    logging.debug(result)
+    val = result.split()
+    if len(val) > 2:
+      return int(val[2])
+
   def SetUUID(self, uuid):
     self.uuid = uuid
 
@@ -112,10 +120,22 @@ class COMAAPI:
     self.SendRequest("read-fits-header", params)
     return self.GetResponse()
 
+  def WriteFITS(self, fits, key, value, comment = None):
+    print(fits)
+    params = "{ \"FITS-FILE\": \"%s\"," % (fits)
+    params += " \"KEYWORD\": \"%s\"," % (key)
+    params += " \"VALUE\": \"%s\"," % (value)
+    if comment is not None:
+      params += " \"COMMENT\": \"%s\"," % (comment)
+    params += "}"
+    self.SendRequest("write-fits-header", params)
+    return self.GetResponse()
+
   def DescribeFITS(self, fits):
     print(fits)
     params = "{ \"FITS-FILE\": \"%s\" }" % (fits)
     self.SendRequest("describe-fits-long", params)
+    #self.SendRequest("describe-fits", params)
     return self.GetResponse()
 
   def CalibrateFITSPhotometry(self, fits, objid, method, aperture):
