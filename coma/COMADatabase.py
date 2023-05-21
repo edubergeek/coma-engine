@@ -88,6 +88,15 @@ class COMADB:
     row = self.GetResults()
     return int(row['nextid']) + 1
 
+  def InsertObservatory(self, observatoryName, observatoryCode):
+    # create a connection cursor
+    tableStr = 'observatories'
+    idStr = 'observatoryid'
+    nextID = self.GetNextID(tableStr, idStr)
+    values = (nextID, observatoryName, observatoryCode)
+    insert = "INSERT INTO %s (%s, obsname, obscode) VALUES (?, ?, ?)" % (tableStr, idStr)
+    return self.InsertRow(insert, values)
+
   def InsertTelescope(self, telescopeName):
     # create a connection cursor
     tableStr = 'telescopes'
@@ -97,31 +106,46 @@ class COMADB:
     insert = "INSERT INTO %s (%s, telescopename) VALUES (?, ?)" % (tableStr, idStr)
     return self.InsertRow(insert, values)
 
-  def InsertInstrument(self, collection_lid):
+  def InsertInstrument(self, collection_lid, instrumentName):
     # create a connection cursor
-    tableStr = 'tinstruments'
-    idStr = 'tinstrumentid'
+    tableStr = 'instruments'
+    idStr = 'instrumentid'
     nextID = self.GetNextID(tableStr, idStr)
-    values = (nextID, collection_lid)
-    insert = "INSERT INTO %s (%s, tinstrumentname) VALUES (?, ?)" % (tableStr, idStr)
+    values = (nextID, collection_lid, instrumentName)
+    insert = "INSERT INTO %s (%s, acronym, tinstrumentname) VALUES (?, ?, ?)" % (tableStr, idStr)
     return self.InsertRow(insert, values)
 
-  def InsertObject(self, bundle_lid, objectType):
+  def InsertObject(self, bundle_lid, objectType, objectName, sbnName):
     # create a connection cursor
     tableStr = 'objects'
     idStr = 'objectid'
     nextID = self.GetNextID(tableStr, idStr)
-    values = (nextID, bundle_lid, objectType)
-    insert = "INSERT INTO %s (%s, defaultobjectname, objecttype_coma) VALUES (?, ?, ?)" % (tableStr, idStr)
+    #values = (nextID, bundle_lid, objectType, objectName, sbnName)
+    #insert = "INSERT INTO %s (%s, pds4_lid, objecttype_coma, defaultobjectname, sbn_targetname) VALUES (?, ?, ?, ?, ?)" % (tableStr, idStr)
+    values = (nextID, bundle_lid, objectType, objectName)
+    insert = "INSERT INTO %s (%s, pds4_lid, objecttype_coma, defaultobjectname) VALUES (?, ?, ?, ?)" % (tableStr, idStr)
     return self.InsertRow(insert, values)
 
-  def InsertImage(self, imageType, object_lid, mjd, expTime, filterName, filePath, fileName):
+  def InsertEphemeris(self, objectID, jd, ctDatetime, trueAnomaly, hcDist):
+    # create a connection cursor
+    tableStr = 'objects'
+    idStr = 'objectid'
+    nextID = self.GetNextID(tableStr, idStr)
+    values = (nextID, objectID, jd, ctDatetime, trueAnomaly, hcDist)
+    insert = "INSERT INTO %s (%s, targetid, jd, ctdatetime, trueanomaly, hcdist) VALUES (?, ?, ?, ?, ?)" % (tableStr, idStr)
+    return self.InsertRow(insert, values)
+
+  def InsertImage(self, imageType, bundle_lid, collection_lid, mjd, expTime, filterCode, filePath, fileName):
     # create a connection cursor
     tableStr = 'images'
     idStr = 'imageid'
     nextID = self.GetNextID(tableStr, idStr)
-    values = (nextID,  imageType, object_lid, mjd, expTime, filterName, filePath, fileName)
-    insert = "INSERT INTO %s (%s, imagetype, jd, exptime, filter, filepath, filename) VALUES (?, ?, ?, ?, ?, ?, ?, ?)" % (tableStr, idStr)
+    objectID = GetObjectID(bundle_lid)
+    instrumentID = GetInstrumentID(collection_lid)
+    imageTypeID = GetImageTypeID(imageType)
+    filterID = GetFilterID(filterCode)
+    values = (nextID,  imageTypeID, objectID, instrumentID, filterID, mjd, expTime, filePath, fileName)
+    insert = "INSERT INTO %s (%s, imagetypeid, objectid, instrumentid, filterid, mjd_mid, exptime, filepath, filename) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)" % (tableStr, idStr)
     return self.InsertRow(insert, values)
 
 # imageid       | int(11)       | NO   | PRI | NULL    |       |
@@ -134,6 +158,28 @@ class COMADB:
 # filepath      | varchar(60)   | YES  |     | NULL    |       |
 # filename      | varchar(40)   | YES  |     | NULL    |       |
 
+  #a subroutine to get the image type id from an image type
+  def GetImageTypeID(self, imageType):
+    tableStr = 'imagetypes'
+    idStr = 'imagetypeid'
+    #split fits_file into path and file name parts
+    queryStr = "SELECT %s from %s WHERE imagetypename = '%s';" % (idStr, tableStr, imageType)
+    self.Run(queryStr)
+    self.GetResultHeaders()
+    row = self.GetResults()
+    return int(row[idStr])
+
+  #a subroutine to get the filter id from a filter code
+  def GetFilterID(self, filterCode):
+    tableStr = 'filters'
+    idStr = 'filterid'
+    #split fits_file into path and file name parts
+    queryStr = "SELECT %s from %s WHERE filter_common_name = '%s';" % (idStr, filterCode)
+    self.Run(queryStr)
+    self.GetResultHeaders()
+    row = self.GetResults()
+    return int(row[idStr])
+
   # a subroutine to get the image id from a FITS filename
   def GetImageID(self, fits_file):
     tableStr = 'images'
@@ -145,12 +191,21 @@ class COMADB:
     row = self.GetResults()
     return int(row[idStr])
 
+  def GetObjectID(self, bundle_lid):
+    tableStr = 'objects'
+    idStr = 'objectid'
+    queryStr = "SELECT %s from %s WHERE pds4_lid = '%s';" % (idStr, tableStr, collection_lid)
+    self.Run(queryStr)
+    self.GetResultHeaders()
+    row = self.GetResults()
+    return int(row[idStr])
+
   #a subroutine to get the instrument id from an instrument_lid (already mapped from Jan's code
   def GetInstrumentID(self, collection_lid):
-    tableStr = 'tinstruments'
-    idStr = 'tinstrumentid'
+    tableStr = 'instruments'
+    idStr = 'instrumentid'
     #assume telinstruments are inserted using coma-collection-lid as tinstrumentname
-    queryStr = "SELECT %s from %s WHERE tinstrumentname = '%s';" % (idStr, tableStr, collection_lid)
+    queryStr = "SELECT %s from %s WHERE acronym = '%s';" % (idStr, tableStr, collection_lid)
     self.Run(queryStr)
     self.GetResultHeaders()
     row = self.GetResults()
@@ -165,9 +220,10 @@ class COMADB:
     # need lookup code for imageID from FITS_FILE name and instumentID from Jan's Instrument code
     imageID = GetImageID(fits_file)
     instrumentID = GetInstrumentID(instrument_lid)
+    filterID = GetFilterID(filterCode)
 
-    values = (nextID,  imageID, instrumentID, mjdMiddle, filterCode, nStars, zpMag, zpMagErr)
-    insert = "INSERT INTO %s (%s, imageid, instrumentid, mjd_middle, filter, nstars, zpmag, zpmag_error) VALUES (?, ?, ?, ?, ?, ?, ?, ?)" % (tableStr, idStr)
+    values = (nextID,  imageID, instrumentID, mjdMiddle, filterID, nStars, zpMag, zpMagErr)
+    insert = "INSERT INTO %s (%s, imageid, instrumentid, mjd_middle, filterID, nstars, zpmag, zpmag_error) VALUES (?, ?, ?, ?, ?, ?, ?, ?)" % (tableStr, idStr)
     return self.InsertRow(insert, values)
 
 # imageid                   | int(11)     | NO   | PRI | NULL    |       |

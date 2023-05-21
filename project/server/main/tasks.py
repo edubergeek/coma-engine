@@ -96,9 +96,38 @@ def coma_fits_calibrate(fits):
   TheCOMAAPI.SetUUID(job.id)
   return TheCOMAAPI.CalibrateFITS(fits)
 
+def coma_insert_calibration(fits_file, instrument, mjdMiddle, filterCode, nStars, zpMag, zpMagErr):
+  job = get_current_job()
+  return TheCOMADB.InsertCalibration(fits_file, instrument_lid, mjdMiddle, filterCode, nStars, zpMag, zpMagErr)
+
+def coma_insert_image(imageType, objectName, instrument, mjd, expTime, filterName, filePath, fileName):
+  job = get_current_job()
+  bundle_lid = TheBundle.IDFromName(objectName)
+  collection_lid = TheCollection.IDFromName(instrument)
+  return TheCOMADB.InsertImage(imageType, bundle_lid, collection_lid, mjd, expTime, filterName, filePath, fileName)
+
+def coma_insert_ephemeris(objectID, jd, ctDatetime, trueAnomaly, hcDist):
+  job = get_current_job()
+  return TheCOMADB.InsertEphemeris(objectID, jd, ctDatetime, trueAnomaly, hcDist)
+
+def coma_insert_object(objectName, objectType):
+  job = get_current_job()
+  bundle_lid = TheBundle.IDFromName(objectName)
+  #sbnName = TheBundle.SBNName(bundle_lid)
+  return TheCOMADB.InsertObject(bundle_lid, objectType, objectName, "")
+
+def coma_insert_instrument(instrumentName):
+  job = get_current_job()
+  collection_lid = TheCollection.IDFromName(instrumentName)
+  return TheCOMADB.InsertInstrument(collection_lid, instrumentName)
+
 def coma_insert_telescope(telescopeName):
   job = get_current_job()
   return TheCOMADB.InsertTelescope(telescopeName)
+
+def coma_insert_observatory(observatoryName, observatoryCode):
+  job = get_current_job()
+  return TheCOMADB.InsertObservatory(observatoryName,observatoryCode)
 
 def query_results(query):
   TheCOMADB.Run(query)

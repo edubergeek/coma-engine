@@ -8,7 +8,9 @@ from flask_cors import CORS
 import json
 
 from project.server.main.tasks import coma_object_images, coma_fits_header, coma_fits_describe, coma_fits_calibrate, coma_fits_photometry, coma_lightcurve, coma_fits_meta
-from project.server.main.tasks import coma_insert_telescope, coma_get_observatory, coma_get_telescope, backend_pid
+from project.server.main.tasks import coma_get_observatory, coma_get_telescope, backend_pid
+from project.server.main.tasks import coma_insert_telescope, coma_insert_calibration, coma_insert_image, coma_insert_ephemeris, coma_insert_object, coma_insert_instrument, coma_insert_observatory
+
 
 def job_tasks(job):
   job_def = json.loads(job)
@@ -339,6 +341,59 @@ def task_run_job():
 #    "task": { "id": task.get_id() },
 #  }
 #  return jsonify(response_object), 202
+CORS(main_blueprint, resources={"/insert/object*": cors_post_config})
+@main_blueprint.route("/insert/object", methods=["POST"])
+def task_insert_object():
+  if request.content_type == "application/json":
+    objectName = request.json["name"]
+    objectType = request.json["type"]
+  else:
+    objectName = request.form["name"]
+    objectType = request.form["type"]
+  with Connection(redis.from_url(current_app.config["REDIS_URL"])):
+    q = Queue()
+    task = q.enqueue(coma_insert_object, objectName, objectType)
+  response_object = {
+    "status": "success",
+    "task": { "id": task.get_id() },
+  }
+  response = jsonify(response_object)
+  response.headers.add("Access-Control-Allow-Origin", "*")
+  return response, 202
+
+
+CORS(main_blueprint, resources={"/insert/image*": cors_post_config})
+@main_blueprint.route("/insert/image", methods=["POST"])
+def task_insert_image():
+  if request.content_type == "application/json":
+    imageFilePath = request.json["file_path"]
+    imageFileName = request.json["file_name"]
+    imageFilter = request.json["filter"]
+    imageType = request.json["type"]
+    exposure = request.json["exposure"]
+    mjd = request.json["mjd"]
+    objectName = request.json["object"]
+    instrument = request.json["instrument"]
+  else:
+    imageFilePath = request.form["file_path"]
+    imageFileName = request.form["file_name"]
+    imageFilter = request.form["filter"]
+    imageType = request.form["type"]
+    exposure = request.form["exposure"]
+    mjd = request.form["mjd"]
+    objectName = request.form["object"]
+    instrument = request.form["instrument"]
+
+  with Connection(redis.from_url(current_app.config["REDIS_URL"])):
+    q = Queue()
+    task = q.enqueue(coma_insert_image, imageType, objectName, instrument, mjd, expTime, filterName, filePath, fileName)
+  response_object = {
+    "status": "success",
+    "task": { "id": task.get_id() },
+  }
+  response = jsonify(response_object)
+  response.headers.add("Access-Control-Allow-Origin", "*")
+  return response, 202
 
 
 CORS(main_blueprint, resources={"/insert/telescope*": cors_post_config})
@@ -351,6 +406,46 @@ def task_insert_telescope():
   with Connection(redis.from_url(current_app.config["REDIS_URL"])):
     q = Queue()
     task = q.enqueue(coma_insert_telescope, telescopeName)
+  response_object = {
+    "status": "success",
+    "task": { "id": task.get_id() },
+  }
+  response = jsonify(response_object)
+  response.headers.add("Access-Control-Allow-Origin", "*")
+  return response, 202
+
+
+CORS(main_blueprint, resources={"/insert/instrument*": cors_post_config})
+@main_blueprint.route("/insert/instrument", methods=["POST"])
+def task_insert_instrument():
+  if request.content_type == "application/json":
+    instrument = request.json["name"]
+  else:
+    instrument = request.form["name"]
+  with Connection(redis.from_url(current_app.config["REDIS_URL"])):
+    q = Queue()
+    task = q.enqueue(coma_insert_instrument, instrument)
+  response_object = {
+    "status": "success",
+    "task": { "id": task.get_id() },
+  }
+  response = jsonify(response_object)
+  response.headers.add("Access-Control-Allow-Origin", "*")
+  return response, 202
+
+
+CORS(main_blueprint, resources={"/insert/observatory*": cors_post_config})
+@main_blueprint.route("/insert/observatory", methods=["POST"])
+def task_insert_observatory():
+  if request.content_type == "application/json":
+    observatoryName = request.json["name"]
+    observatoryCode = request.json["code"]
+  else:
+    observatoryName = request.form["name"]
+    observatoryCode = request.form["code"]
+  with Connection(redis.from_url(current_app.config["REDIS_URL"])):
+    q = Queue()
+    task = q.enqueue(coma_insert_observatory, observatoryName, observatoryCode)
   response_object = {
     "status": "success",
     "task": { "id": task.get_id() },
