@@ -21,7 +21,7 @@ class COMADB:
       'autocommit': True,
     }
     if self.config["port"] > 0:
-      logging.basicConfig(filename='/usr/src/app/logs/coma.log', filemode='a', encoding='utf-8', level=logging.DEBUG)
+      #logging.basicConfig(filename='/usr/src/app/logs/coma.log', filemode='a', encoding='utf-8', level=logging.DEBUG)
       self.OpenDB()
 
 
@@ -39,13 +39,17 @@ class COMADB:
   def CloseDB(self):
     self.conn = None
 
-  def Run(self, dmlSQL, dmlData = None):
-    # create a connection cursor
+  def Run(self, dmlSQL, dmlData = None): # create a connection cursor
     self.cursor = self.conn.cursor()
     # execute a SQL statement
     # TODO check for sql injection
     logging.debug(dmlSQL)
-    return self.cursor.execute(dmlSQL, dmlData)
+    ret =  self.cursor.execute(dmlSQL, dmlData)
+    if ret == 2006:
+      self.CloseDB()
+      self.OpenDB()
+      ret =  self.cursor.execute(dmlSQL, dmlData)
+    return ret
  
   def GetResultHeaders(self):
     # serialize results into JSON
@@ -225,6 +229,42 @@ class COMADB:
     values = (nextID,  imageID, instrumentID, mjdMiddle, filterID, nStars, zpMag, zpMagErr)
     insert = "INSERT INTO %s (%s, imageid, instrumentid, mjd_middle, filterID, nstars, zpmag, zpmag_error) VALUES (?, ?, ?, ?, ?, ?, ?, ?)" % (tableStr, idStr)
     return self.InsertRow(insert, values)
+
+  #a subroutine to get a list of all filters by id with some columns
+  def ListFilters(self):
+    tableStr = 'filters'
+    idStr = 'filterid'
+    orderStr = idStr
+    colStr = 'filter_code, filter_common_name, filter_system_name, ui_code, input_code'
+    queryStr = "SELECT %s, %s from %s ORDER BY filterid;" % (idStr, colStr, tableStr)
+    self.Run(queryStr)
+    col_keys = self.GetResultHeaders()
+    col_values = self.GetResults()
+    return { 'keys': col_keys, 'values': col_values}
+
+  #a subroutine to get a list of all telescopes by id with some columns
+  def ListTelescopes(self):
+    tableStr = 'telescopes'
+    idStr = 'telescopeid'
+    orderStr = 'telescopename'
+    colStr = 'telescopename, observatoryid'
+    queryStr = "SELECT %s, %s from %s ORDER BY %s;" % (idStr, colStr, tableStr, orderStr)
+    self.Run(queryStr)
+    col_keys = self.GetResultHeaders()
+    col_values = self.GetResults()
+    return { 'keys': col_keys, 'values': col_values}
+
+  #a subroutine to get a list of all objects by id with some columns
+  def ListObjects(self):
+    tableStr = 'objects'
+    idStr = 'objectid'
+    orderStr = 'defaultobjectname'
+    colStr = 'defaultobjectname, sbn_targetname, pds4_lid, objecttype_jpl, objecttype_coma'
+    queryStr = "SELECT %s, %s from %s ORDER BY %s;" % (idStr, colStr, tableStr, orderStr)
+    self.Run(queryStr)
+    col_keys = self.GetResultHeaders()
+    col_values = self.GetResults()
+    return { 'keys': col_keys, 'values': col_values}
 
 # imageid                   | int(11)     | NO   | PRI | NULL    |       |
 # calibrationid             | int(11)     | NO   |     | NULL    |       |
