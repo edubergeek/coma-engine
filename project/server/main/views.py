@@ -10,6 +10,7 @@ import json
 from project.server.main.tasks import coma_object_images, coma_fits_header, coma_fits_describe, coma_fits_calibrate, coma_fits_photometry, coma_lightcurve, coma_fits_meta
 from project.server.main.tasks import coma_get_observatory, coma_get_telescope, backend_pid
 from project.server.main.tasks import coma_insert_telescope, coma_insert_calibration, coma_insert_image, coma_insert_ephemeris, coma_insert_object, coma_insert_instrument, coma_insert_observatory
+from project.server.main.tasks import coma_list_objects, coma_list_filters, coma_list_telescopes
 
 
 def job_tasks(job):
@@ -48,14 +49,19 @@ def home():
 
 
 # API for list all URLs
-CORS(main_blueprint, resources={"/routes/": cors_get_config})
-@main_blueprint.route("/routes/", methods=["GET"])
+CORS(main_blueprint, resources={"/routes": cors_get_config})
+@main_blueprint.route("/routes", methods=["GET"])
 def list_routes():
   response_object = {
       "routes": {
         "url": "/routes", 
         "method": "GET",
         "description": "List of REST API URLs",
+      },
+      "filters": {
+        "url": "/filters", 
+        "method": "GET",
+        "description": "List of valid filter IDs",
       },
       "lightcurve": {
         "url": "/lightcurve",
@@ -81,6 +87,11 @@ def list_routes():
         "method": "GET",
         "description": "Get telescope attributes",
         "<code>": "Telescope Code",
+      },
+      "telescopes": {
+        "url": "/telescopes", 
+        "method": "GET",
+        "description": "List of valid telescope IDs",
       },
       "observatory": {
         "url": "/observatory/<code>", 
@@ -145,14 +156,45 @@ def list_routes():
   }
   return jsonify(response_object)
 
-# API for list object ids
+# API for list of object ids
 CORS(main_blueprint, resources={"/objects": cors_get_config})
 @main_blueprint.route("/objects", methods=["GET"])
 def list_objects():
+  with Connection(redis.from_url(current_app.config["REDIS_URL"])):
+    q = Queue()
+    task = q.enqueue(coma_list_objects)
   response_object = {
-    "9p": "9P/1867 G1 (Tempel 1)",
+    "status": "success",
+    "task": { "id": task.get_id() },
   }
-  return jsonify(response_object)
+  return jsonify(response_object), 202
+
+# API for list of telescopes ids
+CORS(main_blueprint, resources={"/telescopes": cors_get_config})
+@main_blueprint.route("/telescopes", methods=["GET"])
+def list_telescopes():
+  with Connection(redis.from_url(current_app.config["REDIS_URL"])):
+    q = Queue()
+    task = q.enqueue(coma_list_telescopes)
+  response_object = {
+    "status": "success",
+    "task": { "id": task.get_id() },
+  }
+  return jsonify(response_object), 202
+
+# API for list of filters ids
+CORS(main_blueprint, resources={"/filters": cors_get_config})
+@main_blueprint.route("/filters", methods=["GET"])
+def list_filters():
+  with Connection(redis.from_url(current_app.config["REDIS_URL"])):
+    q = Queue()
+    task = q.enqueue(coma_list_filters)
+  response_object = {
+    "status": "success",
+    "task": { "id": task.get_id() },
+  }
+  return jsonify(response_object), 202
+
 
 
 #@main_blueprint.route("/tasks", methods=["POST"])
