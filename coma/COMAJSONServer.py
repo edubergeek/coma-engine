@@ -28,7 +28,7 @@ class COMAAPI:
 
   def __init__(self):
     self.debug=False
-    logging.basicConfig(filename='/usr/src/app/logs/coma.log', filemode='a', encoding='utf-8', level=logging.DEBUG)
+    #logging.basicConfig(filename='/usr/src/app/logs/coma.log', filemode='a', encoding='utf-8', level=logging.DEBUG)
     self.uuid = "abc123"
     self.COMAServerPollCount= int(os.getenv('COMA_SERVER_POLL_COUNT', default="60"))
     self.COMAServerPollInterval= int(os.getenv('COMA_SERVER_POLL_INTERVAL', default="1"))
