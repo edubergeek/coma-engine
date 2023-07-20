@@ -13,7 +13,7 @@ services:
       - .:/usr/src/app
       - /COMA/bundle:/bundle
       - /COMA/collection:/collection
-      - /COMA/Coma:/coma
+      #- /COMA/Coma:/coma
     environment:
       - FLASK_DEBUG=1
       - APP_SETTINGS=project.server.config.DevelopmentConfig
@@ -29,15 +29,17 @@ services:
       - /COMA/bundle:/bundle
       - /COMA/collection:/collection
       - /var/www/html/coma:/www
-      - /COMA/images:/COMA/images
     environment:
       - APP_SETTINGS=project.server.config.DevelopmentConfig
       - COMA_DB_HOST=${COMA_DB_HOST}
       - COMA_DB_PORT=${COMA_DB_PORT}
       - COMA_DB_USER=${COMA_DB_USER}
       - COMA_DB_PASS=${COMA_DB_PASS}
+      - COMA_SERVER_HOST=${COMA_SERVER_HOST}
+      - COMA_SERVER_PORT=${COMA_SERVER_PORT}
     depends_on:
       - redis
+      - backend
     networks:
 #      - backend
        default:
@@ -60,6 +62,34 @@ services:
       - RQ_DASHBOARD_QUEUES=["default"]
     depends_on:
       - redis
+
+  backend:
+    build: ./backend
+    #image: dashboard
+    container_name: backend
+    hostname: backend
+    ports:
+      - 5054:5054
+    environment:
+      - VIZQUERY_PROGRAM=${VIZQUERY_PROGRAM}
+      - VIZQUERY_SITE=${VIZQUERY_SITE}
+      - COMA_SERVER_HOST=${COMA_SERVER_HOST}
+    volumes:
+      - /data/staging:/data/staging
+      - /COMA/coma-prod/code:/coma/code
+      - /COMA/coma-prod/static-data:/static-data
+      - ./cache:/root/.cache
+    command: /root/coma-json-server
+
+  skypatrol:
+    build: skypatrol
+    container_name: skypatrol
+    ports:
+      - 8818:8888
+    command: jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
+    volumes:
+      - /data/asassn:/data
+
 
 #networks:
 #  backend:
