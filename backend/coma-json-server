@@ -1,0 +1,17 @@
+#!/bin/bash
+
+export COMA_DIR=/coma
+export COMA_BIN_DIR=${COMA_DIR}/bin
+export COMA_CODE_DIR=${COMA_DIR}/code
+export COMA_INIT_DIR=${COMA_DIR}/code/init
+export COMA_STATIC_DATA_DIR=${COMA_DIR}/static-data
+export COMA_LISP_DIR=${COMA_DIR}/code/Lisp
+export LISP_LIB=${COMA_LISP_DIR}/lisp-lib
+export SBCLRC=${COMA_DIR}/code/Lisp/lisp-lib/INIT-FILES/SBCLRC
+export SBCL=/usr/local/bin/sbcl
+
+PATH=$PATH:${COMA_DIR}/bin:${COMA_DIR}/code/Lisp/lisp-lib/astro/Scripts
+export REFCAT_DIR=/static-data/Refcat2
+
+COMA_SERVER_PORT="${COMA_SERVER_PORT:-5054}"
+/coma/code/Lisp/lisp-lib/astro/COMA-PROJECT/Scripts/coma-json-server -web-server -web-host 0.0.0.0 -web-port $COMA_SERVER_PORT
