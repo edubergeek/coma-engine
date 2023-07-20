@@ -129,6 +129,25 @@ def coma_insert_observatory(observatoryName, observatoryCode):
   job = get_current_job()
   return TheCOMADB.InsertObservatory(observatoryName,observatoryCode)
 
+def coma_list_objects():
+  job = get_current_job()
+  ret = TheCOMADB.ListObjects()
+  response = json.dumps(ret)
+  return response
+
+def coma_list_filters():
+  job = get_current_job()
+  ret = TheCOMADB.ListFilters()
+  response = json.dumps(ret)
+  return response
+
+def coma_list_telescopes():
+  job = get_current_job()
+  ret = TheCOMADB.ListTelescopes()
+  response = json.dumps(ret)
+  return response
+
+
 def query_results(query):
   TheCOMADB.Run(query)
 
