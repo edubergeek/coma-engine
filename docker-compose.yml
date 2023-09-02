@@ -76,6 +76,7 @@ services:
       - COMA_SERVER_HOST=${COMA_SERVER_HOST}
     volumes:
       - /data/staging:/data/staging
+      - /data/CDROMS/VALIDATED:/data/CDROMS/VALIDATED
       - /COMA/coma-prod/code:/coma/code
       - /COMA/coma-prod/static-data:/static-data
       - ./cache:/root/.cache
