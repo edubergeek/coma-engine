@@ -77,6 +77,7 @@ services:
     volumes:
       - /data/staging:/data/staging
       - /data/CDROMS/VALIDATED:/data/CDROMS/VALIDATED
+      - /data/atlas/obj:/data/atlas/obj
       - /COMA/coma-prod/code:/coma/code
       - /COMA/coma-prod/static-data:/static-data
       - ./cache:/root/.cache
