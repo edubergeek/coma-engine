@@ -1,98 +1,104 @@
-version: '3.1'
-
 services:
-
-  web:
-    build: .
-    image: web
-    container_name: web
-    ports:
-      - 5004:5000
-    command: python manage.py run -h 0.0.0.0
-    volumes:
-      - .:/usr/src/app
-      - /COMA/bundle:/bundle
-      - /COMA/collection:/collection
-      #- /COMA/Coma:/coma
-    environment:
-      - FLASK_DEBUG=1
-      - APP_SETTINGS=project.server.config.DevelopmentConfig
-
-    depends_on:
-      - redis
-
-  worker:
-    image: web
-    command: python manage.py run_worker
-    volumes:
-      - .:/usr/src/app
-      - /COMA/bundle:/bundle
-      - /COMA/collection:/collection
-      - /var/www/html/coma:/www
-    environment:
-      - APP_SETTINGS=project.server.config.DevelopmentConfig
-      - COMA_DB_HOST=${COMA_DB_HOST}
-      - COMA_DB_PORT=${COMA_DB_PORT}
-      - COMA_DB_USER=${COMA_DB_USER}
-      - COMA_DB_PASS=${COMA_DB_PASS}
-      - COMA_SERVER_HOST=${COMA_SERVER_HOST}
-      - COMA_SERVER_PORT=${COMA_SERVER_PORT}
-    depends_on:
-      - redis
-      - backend
-    networks:
+#  web:
+#    build: .
+#    image: web
+#    container_name: web
+#    restart: always
+#    ports:
+#      - 5004:5000
+#    command: python manage.py run -h 0.0.0.0
+#    volumes:
+#      - .:/usr/src/app
+#      - /COMA/bundle:/bundle
+#      - /COMA/collection:/collection
+#      #- /COMA/Coma:/coma
+#    environment:
+#      - FLASK_DEBUG=1
+#      - APP_SETTINGS=project.server.config.DevelopmentConfig
+#
+#    depends_on:
+#      - redis
+#
+#  worker:
+#    image: web
+#    restart: always
+#    command: python manage.py run_worker
+#    volumes:
+#      - .:/usr/src/app
+#      - /COMA/bundle:/bundle
+#      - /COMA/collection:/collection
+#      - /var/www/html/coma:/www
+#    environment:
+#      - APP_SETTINGS=project.server.config.DevelopmentConfig
+#      - COMA_DB_HOST=${COMA_DB_HOST}
+#      - COMA_DB_PORT=${COMA_DB_PORT}
+#      - COMA_DB_USER=${COMA_DB_USER}
+#      - COMA_DB_PASS=${COMA_DB_PASS}
+#      - COMA_SERVER_HOST=${COMA_SERVER_HOST}
+#      - COMA_SERVER_PORT=${COMA_SERVER_PORT}
+#    depends_on:
+#      - redis
 #      - backend
-       default:
-         ipv4_address: 192.168.32.5
-
-  redis:
-    image: redis:6-alpine
-
-  dashboard:
-    build: ./rq-dashboard
-    #image: dashboard
-    #image: dashboard:1.8
-    #image: eoranged/rq-dashboard
-    container_name: dashboard
-    ports:
-      - 9181:9181
-    #command: rq-dashboard -H redis
-    environment:
-      - RQ_DASHBOARD_REDIS_URL=redis://redis:6379/0
-      - RQ_DASHBOARD_QUEUES=["default"]
-    depends_on:
-      - redis
-
+##    networks:
+##      - backend
+##       default:
+##         ipv4_address: 192.168.32.5
+#
+#  redis:
+#    image: redis:6-alpine
+#    restart: always
+#
+#  dashboard:
+#    build: ./rq-dashboard
+#    #image: dashboard
+#    #image: dashboard:1.8
+#    #image: eoranged/rq-dashboard
+#    container_name: dashboard
+#    restart: always
+#    ports:
+#      - 9181:9181
+#    #command: rq-dashboard -H redis
+#    environment:
+#      - RQ_DASHBOARD_REDIS_URL=redis://redis:6379/0
+#      - RQ_DASHBOARD_QUEUES=["default"]
+#    depends_on:
+#      - redis
+#
   backend:
     build: ./backend
     #image: dashboard
     container_name: backend
     hostname: backend
+    restart: always
     ports:
       - 5054:5054
     environment:
       - VIZQUERY_PROGRAM=${VIZQUERY_PROGRAM}
       - VIZQUERY_SITE=${VIZQUERY_SITE}
       - COMA_SERVER_HOST=${COMA_SERVER_HOST}
+      - TERAPIX_DIRECTORY=${TERAPIX_DIRECTORY}
     volumes:
       - /data/staging:/data/staging
       - /data/CDROMS/VALIDATED:/data/CDROMS/VALIDATED
       - /data/atlas/obj:/data/atlas/obj
+      - /data/gemini:/data/gemini
+      - /data2/Observing-Data/OBSERVATORIES/CFHT-MegaCam/CFHT_ARCHIVE:/data2/Observing-Data/OBSERVATORIES/CFHT-MegaCam/CFHT_ARCHIVE
       - /COMA/coma-prod/code:/coma/code
       - /COMA/coma-prod/static-data:/static-data
       - ./cache:/root/.cache
     command: /root/coma-json-server
+    #command: sleep 86400
 
-  skypatrol:
-    build: skypatrol
-    container_name: skypatrol
-    ports:
-      - 8818:8888
-    command: jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
-    volumes:
-      - /data/asassn:/data
-
-
+#  skypatrol:
+#    build: skypatrol
+#    container_name: skypatrol
+#    ports:
+#      - 8818:8888
+#    command: jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
+#    volumes:
+#      - /data/asassn:/data
+#
+#
 #networks:
 #  backend:
 #    driver: bridge
@@ -101,4 +107,10 @@ networks:
     ipam:
       #driver: default
       config:
-        - subnet: 192.168.32.0/16
+        - subnet: 192.168.0.0/16
+        # - subnet: 192.168.32.0/16
+
+#networks:
+#  default:
+#    external:
+#      name: coma-dev
