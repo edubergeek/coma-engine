@@ -28,7 +28,7 @@ class COMAAPI:
 
   def __init__(self):
     self.debug=False
-    #logging.basicConfig(filename='/usr/src/app/logs/coma.log', filemode='a', encoding='utf-8', level=logging.DEBUG)
+    logging.basicConfig(filename='/coma/coma.log', filemode='a', encoding='utf-8', level=logging.DEBUG)
     self.uuid = "abc123"
     self.COMAServerPollCount= int(os.getenv('COMA_SERVER_POLL_COUNT', default="60"))
     self.COMAServerPollInterval= int(os.getenv('COMA_SERVER_POLL_INTERVAL', default="1"))
@@ -156,11 +156,30 @@ class COMAAPI:
     self.SendRequest("do-photometry", params)
     return self.GetResponse()
 
-
   def CalibrateFITS(self, fits):
     params = "{ \"FITS-FILE\": \"%s\"," % (fits)
     params += "}"
     self.SendRequest("calibrate-image", params)
+    return self.GetResponse()
+
+  def GetOrbit(self, objid, mjd):
+    params = "{ \"METHOD\": \"orbit\","
+    params += " \"OBJECT\": \"%s\"," % (objid)
+    params += " \"EPOCH-MJD\": %f," % (mjd)
+    params += "}"
+    self.SendRequest("get-orbit", params)
+    return self.GetResponse()
+
+  def GetEphemeris(self, objid, obscode, dt_min, utc_start, utc_end):
+    params = "{ \"METHOD\": \"ORBIT\","
+    params += " \"ORBIT\": \"jpl-orbit\","
+    params += " \"OBJECT\": \"%s\"," % (objid)
+    params += " \"OBSCODE\": \"%s\"," % (obscode)
+    params += " \"DT-MINUTES\": %d," % (dt_min)
+    params += " \"UTC-START\": \"%s\"," % (utc_start)
+    params += " \"UTC-END\": \"%s\"," % (utc_end)
+    params += "}"
+    self.SendRequest("get-ephem", params)
     return self.GetResponse()
 
 
