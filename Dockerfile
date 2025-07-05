@@ -1,5 +1,5 @@
 # base image
-FROM python:3.9.1-alpine
+FROM python:3.12.11-alpine
 
 RUN apk add build-base
 RUN apk add mariadb-dev mariadb-common mariadb-client mariadb-connector-c
