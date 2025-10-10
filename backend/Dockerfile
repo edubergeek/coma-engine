@@ -4,21 +4,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends wget build-esse
 RUN apt-get install -y gfortran libgfortran5 pgplot5 libfftw3-double3 libfftw3-single3 
 
 # Install cfitsio and friends 
-RUN apt-get -y install  libcfitsio-bin libcfitsio-dev libcfitsio10t64
+RUN apt-get install -y libcfitsio-bin libcfitsio-dev libcfitsio10t64
 
 # Install TERAPIX reqs and other astro sw via astromatic  
-# Install dependencies for adding external repositories
-RUN apt-get update && \
-  apt-get install -y apt-transport-https gnupg curl lsb-release && \
-  echo "deb https://repo.astromatic.net/ubuntu/stable $(lsb_release -cs) main" > /etc/apt/sources.list.d/astromatic-stable.list && \
-  curl -fsSL https://repo.astromatic.net/astromatic.net.key | tee /etc/apt/trusted.gpg.d/astromatic.asc && \
-  apt-get update
+RUN apt-get install -y source-extractor swarp scamp libatlas-base-dev libblas-dev liblapack-dev
 
-# Install astronomy tools
-RUN apt-get install -y source-extractor swarp scamp libatlas-base-dev libblas-dev liblapack-dev 
-# RUN apt-get install -y slalib
-
-
+# Compile and install SLALIB from C++ port (slalib-cpp)
+WORKDIR /usr/local/src
+RUN apt-get install -y git cmake && \
+  git clone --depth 1 https://github.com/cyberhull/slalib-cpp.git && \
+  cd slalib-cpp && \
+  mkdir build && cd build && \
+  cmake -DBUILD_SHARED_LIBS=ON .. && \
+  make && \
+  cp lib/libslalib.so /usr/local/lib/libslalib.so && \
+  ldconfig && \
+  cd /usr/local/src && rm -rf slalib-cpp
 
 # Install SBCL
 RUN apt-get install -y sbcl
