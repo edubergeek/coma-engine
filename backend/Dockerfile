@@ -37,5 +37,5 @@ WORKDIR /usr/local/src/cdsclient-3.84
 RUN ./configure && make && make install
 
 WORKDIR /root
-COPY coma-json-server .
+COPY ./coma-json-server .
 
