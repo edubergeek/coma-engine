@@ -1,9 +1,0 @@
-Flask
-Flask-Bootstrap
-Flask-Testing
-Flask-WTF
-Flask-CORS
-redis
-rq
-requests
-mariadb
