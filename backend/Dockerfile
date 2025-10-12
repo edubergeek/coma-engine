@@ -5,9 +5,6 @@ RUN apt-get install -y gfortran libgfortran5 pgplot5 libfftw3-double3 libfftw3-s
 # Additional libraries needed for compilation of cftisio quirks
 RUN apt-get install -y zlib1g-dev libcurl4-openssl-dev
 
-# Install cfitsio and friends 
-# RUN apt-get install -y libcfitsio-bin libcfitsio-dev libcfitsio10t64
-
 # ------------------------------------------------------------------
 # Build and install CFITSIO with reentrant (thread-safe) support
 # ------------------------------------------------------------------
