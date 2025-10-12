@@ -16,7 +16,7 @@ WORKDIR /usr/local/src
 RUN wget https://heasarc.gsfc.nasa.gov/FTP/software/fitsio/c/cfitsio_latest.tar.gz --no-check-certificate && \
   tar xzf cfitsio_latest.tar.gz && \
   cd cfitsio-* && \
-  ./configure --prefix=/usr/local --enable-reentrant && \
+  ./configure --prefix=/usr/local --enable-reentrant --enable-shared  && \
   make -j"$(nproc)" && \
   make install && \
   ldconfig && \
