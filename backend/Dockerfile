@@ -2,7 +2,7 @@ FROM ubuntu:24.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends wget build-essential curl
 RUN apt-get install -y gfortran libgfortran5 pgplot5 libfftw3-double3 libfftw3-single3
-# Additional libraries needed for compilations
+# Additional libraries needed for compilation of cftisio quirks
 RUN apt-get install -y zlib1g-dev libcurl4-openssl-dev
 
 # Install cfitsio and friends 
