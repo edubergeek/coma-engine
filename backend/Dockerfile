@@ -70,7 +70,7 @@ RUN git clone --depth 1 https://github.com/jtsiomb/kdtree.git && \
 # ------------------------------------------------------------------
 WORKDIR /usr/local/src
 RUN git clone --depth 1 https://github.com/sadaszewski/concaveman-cpp.git && \
-  cd concaveman-cpp && \
+  cd concaveman-cpp/src/main/cpp && \
   g++ -std=c++11 -fPIC -shared concaveman.cpp -o libconcaveman.so && \
   cp libconcaveman.so /usr/local/lib/ && \
   cp concaveman.h /usr/local/include/ && \
@@ -82,27 +82,28 @@ RUN git clone --depth 1 https://github.com/sadaszewski/concaveman-cpp.git && \
 # ------------------------------------------------------------------
 WORKDIR /usr/local/src
 RUN apt-get install -y autoconf automake libtool && \
-  wget https://www.math.colostate.edu/~jdh/tsnnls-2.3.4.tar.gz && \
-  tar xzf tsnnls-2.3.4.tar.gz && \
-  cd tsnnls-2.3.4 && \
+  wget https://jasoncantarella.com/downloads/libtsnnls-2.3.4.tar.gz && \
+  tar xzf libtsnnls-2.3.4.tar.gz && \
+  cd libtsnnls-2.3.4 && \
   autoreconf --install --force && \
   ./configure --prefix=/usr/local && \
   make && \
   make install && \
   ldconfig && \
-  cd /usr/local/src && rm -rf tsnnls-2.3.4 tsnnls-2.3.4.tar.gz
+  cd /usr/local/src && rm -rf libtsnnls-2.3.4 libtsnnls-2.3.4.tar.gz
 
 # ------------------------------------------------------------------
 # Build and install sol_kep_simple (Kepler orbit solver)
+# Dead link - code not where it should be
 # ------------------------------------------------------------------
-WORKDIR /usr/local/src
-RUN wget http://staff.science.uva.nl/~ato/kepler/sol_kep.tar.gz && \
-  tar xzf sol_kep.tar.gz && \
-  cd sol_kep && \
-  gcc -fPIC -shared -o libsolkep.so solkep.c -lm && \
-  cp libsolkep.so /usr/local/lib/ && \
-  ldconfig && \
-  cd /usr/local/src && rm -rf sol_kep sol_kep.tar.gz
+# WORKDIR /usr/local/src
+# RUN wget http://staff.science.uva.nl/~ato/kepler/sol_kep.tar.gz && \
+#   tar xzf sol_kep.tar.gz && \
+#   cd sol_kep && \
+#   gcc -fPIC -shared -o libsolkep.so solkep.c -lm && \
+#   cp libsolkep.so /usr/local/lib/ && \
+#   ldconfig && \
+#   cd /usr/local/src && rm -rf sol_kep sol_kep.tar.gz
 
 # ------------------------------------------------------------------
 # Install SBCL
