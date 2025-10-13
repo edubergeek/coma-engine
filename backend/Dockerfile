@@ -4,6 +4,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends wget build-esse
 RUN apt-get install -y gfortran libgfortran5 pgplot5 libfftw3-double3 libfftw3-single3
 # Additional libraries needed for compilation of cftisio quirks
 RUN apt-get install -y zlib1g-dev libcurl4-openssl-dev
+# Additional libraries from original dynamic-libraries (XPA, WCS)
+RUN apt-get install -y libxpa-dev libxpa1 xpa-tools wcslib-dev libwcs8
 
 # ------------------------------------------------------------------
 # Build and install CFITSIO with reentrant (thread-safe) support
