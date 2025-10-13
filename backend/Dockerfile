@@ -21,10 +21,15 @@ RUN wget https://heasarc.gsfc.nasa.gov/FTP/software/fitsio/c/cfitsio_latest.tar.
   ldconfig && \
   cd /usr/local/src && rm -rf cfitsio cfitsio_latest.tar.gz
 
+# ------------------------------------------------------------------
 # Install TERAPIX reqs and other astro sw via astromatic  
+# ------------------------------------------------------------------
 RUN apt-get install -y source-extractor swarp scamp libatlas-base-dev libblas-dev liblapack-dev
 
+
+# ------------------------------------------------------------------
 # Compile and install SLALIB from C++ port (slalib-cpp)
+# ------------------------------------------------------------------
 # WORKDIR /usr/local/src
 # RUN apt-get install -y git cmake && \
 #   git clone --depth 1 https://github.com/cyberhull/slalib-cpp.git && \
@@ -36,7 +41,9 @@ RUN apt-get install -y source-extractor swarp scamp libatlas-base-dev libblas-de
 #   ldconfig && \
 #   cd /usr/local/src && rm -rf slalib-cpp
 
+# ------------------------------------------------------------------
 # Compile and install SLALIB from Fortran modded Jan Kleyna source
+# ------------------------------------------------------------------
 WORKDIR /usr/local/src
 RUN git clone --depth 1 https://github.com/wakatara/slalib.starlink.modded.git && \
   cd slalib.starlink.modded && \
@@ -46,10 +53,65 @@ RUN git clone --depth 1 https://github.com/wakatara/slalib.starlink.modded.git &
   ldconfig && \
   cd /usr/local/src && rm -rf slalib.starlink.modded
 
+# ------------------------------------------------------------------
+# Build and install kdtree library for spatial indexing
+# ------------------------------------------------------------------
+WORKDIR /usr/local/src
+RUN git clone --depth 1 https://github.com/jtsiomb/kdtree.git && \
+  cd kdtree && \
+  ./configure --prefix=/usr/local && \
+  make && \
+  make install && \
+  ldconfig && \
+  cd /usr/local/src && rm -rf kdtree
+
+# ------------------------------------------------------------------
+# Build and install concaveman for concave hull computation
+# ------------------------------------------------------------------
+WORKDIR /usr/local/src
+RUN git clone --depth 1 https://github.com/sadaszewski/concaveman-cpp.git && \
+  cd concaveman-cpp && \
+  g++ -std=c++11 -fPIC -shared concaveman.cpp -o libconcaveman.so && \
+  cp libconcaveman.so /usr/local/lib/ && \
+  cp concaveman.h /usr/local/include/ && \
+  ldconfig && \
+  cd /usr/local/src && rm -rf concaveman-cpp
+
+# ------------------------------------------------------------------
+# Build and install tsnnls (sparse non-negative least squares)
+# ------------------------------------------------------------------
+WORKDIR /usr/local/src
+RUN apt-get install -y autoconf automake libtool && \
+  wget https://www.math.colostate.edu/~jdh/tsnnls-2.3.4.tar.gz && \
+  tar xzf tsnnls-2.3.4.tar.gz && \
+  cd tsnnls-2.3.4 && \
+  autoreconf --install --force && \
+  ./configure --prefix=/usr/local && \
+  make && \
+  make install && \
+  ldconfig && \
+  cd /usr/local/src && rm -rf tsnnls-2.3.4 tsnnls-2.3.4.tar.gz
+
+# ------------------------------------------------------------------
+# Build and install sol_kep_simple (Kepler orbit solver)
+# ------------------------------------------------------------------
+WORKDIR /usr/local/src
+RUN wget http://staff.science.uva.nl/~ato/kepler/sol_kep.tar.gz && \
+  tar xzf sol_kep.tar.gz && \
+  cd sol_kep && \
+  gcc -fPIC -shared -o libsolkep.so solkep.c -lm && \
+  cp libsolkep.so /usr/local/lib/ && \
+  ldconfig && \
+  cd /usr/local/src && rm -rf sol_kep sol_kep.tar.gz
+
+# ------------------------------------------------------------------
 # Install SBCL
+# ------------------------------------------------------------------
 RUN apt-get install -y sbcl
 
+# ------------------------------------------------------------------
 # Compile and install cdsclient from CDS official source
+# ------------------------------------------------------------------
 WORKDIR /usr/local/src
 RUN wget http://cdsarc.cds.unistra.fr/ftp/pub/sw/cdsclient.tar.gz && \
   tar xzf cdsclient.tar.gz && \
@@ -59,6 +121,11 @@ RUN wget http://cdsarc.cds.unistra.fr/ftp/pub/sw/cdsclient.tar.gz && \
   make install && \
   cd /usr/local/src && rm -rf cdsclient-* cdsclient.tar.gz
 
+
+
+# ------------------------------------------------------------------
+# Boot the sci-backend coma-json-server
+# ------------------------------------------------------------------
 WORKDIR /root
 COPY ./coma-json-server .
 
