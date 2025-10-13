@@ -123,6 +123,15 @@ RUN wget http://cdsarc.cds.unistra.fr/ftp/pub/sw/cdsclient.tar.gz && \
   cd /usr/local/src && rm -rf cdsclient-* cdsclient.tar.gz
 
 
+# ------------------------------------------------------------------
+# Create directory structure for sci-backend data volume mounts
+# ------------------------------------------------------------------
+RUN mkdir -p /data/support/sci-backend/catalogs \
+  /data/support/config \
+  /data/support/sci-backend/cache \
+  /data/support/sci-backend/orbits \
+  /data/support/sci-backend/work && \
+  chmod -R 755 /data
 
 # ------------------------------------------------------------------
 # Boot the sci-backend coma-json-server
