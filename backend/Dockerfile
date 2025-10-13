@@ -93,17 +93,17 @@ RUN apt-get install -y autoconf automake libtool && \
   cd /usr/local/src && rm -rf libtsnnls-2.3.4 libtsnnls-2.3.4.tar.gz
 
 # ------------------------------------------------------------------
-# Build and install sol_kep_simple (Kepler orbit solver)
-# Dead link - code not where it should be
+# Build and install simple-kepler-solver (Kepler orbit solver)
+# Archival copy of Mehmet Atakan Gürkan's sol_kep code
+# Used by Jan Kleyna in COMA sci-backend for isochrone/isodyne calculations
 # ------------------------------------------------------------------
-# WORKDIR /usr/local/src
-# RUN wget http://staff.science.uva.nl/~ato/kepler/sol_kep.tar.gz && \
-#   tar xzf sol_kep.tar.gz && \
-#   cd sol_kep && \
-#   gcc -fPIC -shared -o libsolkep.so solkep.c -lm && \
-#   cp libsolkep.so /usr/local/lib/ && \
-#   ldconfig && \
-#   cd /usr/local/src && rm -rf sol_kep sol_kep.tar.gz
+WORKDIR /usr/local/src
+RUN git clone --depth 1 https://github.com/wakatara/simple-kepler-solver.git && \
+  cd simple-kepler-solver && \
+  make && \
+  make install && \
+  ldconfig && \
+  cd /usr/local/src && rm -rf simple-kepler-solver
 
 # ------------------------------------------------------------------
 # Install SBCL
