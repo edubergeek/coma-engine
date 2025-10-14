@@ -54,45 +54,6 @@ RUN git clone --depth 1 https://github.com/wakatara/slalib.starlink.modded.git &
   cd /usr/local/src && rm -rf slalib.starlink.modded
 
 # ------------------------------------------------------------------
-# Build and install kdtree library for spatial indexing
-# ------------------------------------------------------------------
-WORKDIR /usr/local/src
-RUN git clone --depth 1 https://github.com/jtsiomb/kdtree.git && \
-  cd kdtree && \
-  ./configure --prefix=/usr/local && \
-  make && \
-  make install && \
-  ldconfig && \
-  cd /usr/local/src && rm -rf kdtree
-
-# ------------------------------------------------------------------
-# Build and install concaveman for concave hull computation
-# ------------------------------------------------------------------
-WORKDIR /usr/local/src
-RUN git clone --depth 1 https://github.com/sadaszewski/concaveman-cpp.git && \
-  cd concaveman-cpp/src/main/cpp && \
-  g++ -std=c++11 -fPIC -shared concaveman.cpp -o libconcaveman.so && \
-  cp libconcaveman.so /usr/local/lib/ && \
-  cp concaveman.h /usr/local/include/ && \
-  ldconfig && \
-  cd /usr/local/src && rm -rf concaveman-cpp
-
-# ------------------------------------------------------------------
-# Build and install tsnnls (sparse non-negative least squares)
-# ------------------------------------------------------------------
-WORKDIR /usr/local/src
-RUN apt-get install -y autoconf automake libtool && \
-  wget https://jasoncantarella.com/downloads/libtsnnls-2.3.4.tar.gz && \
-  tar xzf libtsnnls-2.3.4.tar.gz && \
-  cd libtsnnls-2.3.4 && \
-  autoreconf --install --force && \
-  ./configure --prefix=/usr/local && \
-  make && \
-  make install && \
-  ldconfig && \
-  cd /usr/local/src && rm -rf libtsnnls-2.3.4 libtsnnls-2.3.4.tar.gz
-
-# ------------------------------------------------------------------
 # Build and install simple-kepler-solver (Kepler orbit solver)
 # Archival copy of Mehmet Atakan Gürkan's sol_kep code
 # Used by Jan Kleyna in COMA sci-backend for isochrone/isodyne calculations
@@ -106,9 +67,23 @@ RUN git clone --depth 1 https://github.com/wakatara/simple-kepler-solver.git && 
   cd /usr/local/src && rm -rf simple-kepler-solver
 
 # ------------------------------------------------------------------
-# Install SBCL
+# Install SBCL and Quicklisp
 # ------------------------------------------------------------------
 RUN apt-get install -y sbcl
+
+# Install Quicklisp
+WORKDIR /root
+RUN curl -O https://beta.quicklisp.org/quicklisp.lisp && \
+  sbcl --non-interactive \
+  --load quicklisp.lisp \
+  --eval '(quicklisp-quickstart:install :path "/root/quicklisp")' && \
+  rm quicklisp.lisp
+
+# Install buildapp for creating executables
+RUN sbcl --non-interactive \
+  --load /root/quicklisp/setup.lisp \
+  --eval '(ql:quickload :buildapp)' \
+  --eval '(buildapp:build-buildapp "/usr/local/bin/buildapp")'
 
 # ------------------------------------------------------------------
 # Compile and install cdsclient from CDS official source
@@ -134,8 +109,54 @@ RUN mkdir -p /data/support/sci-backend/catalogs \
   chmod -R 755 /data
 
 # ------------------------------------------------------------------
-# Boot the sci-backend coma-json-server
+# Copy and build coma-sci-backend Lisp application
 # ------------------------------------------------------------------
 WORKDIR /root
-COPY ./coma-json-server .
+
+# Copy the entire coma-sci-backend source tree (relative to COMA/ build context)
+COPY coma-sci-backend /root/coma-sci-backend
+
+# Install Quicklisp dependencies from qlfile
+WORKDIR /root/coma-sci-backend
+RUN sbcl --non-interactive \
+  --load /root/quicklisp/setup.lisp \
+  --eval '(ql:quickload :yason)' \
+  --eval '(ql:quickload :alexandria)' \
+  --eval '(ql:quickload :hunchentoot)' \
+  --eval '(ql:quickload :drakma)' \
+  --eval '(ql:quickload :cl-ppcre)' \
+  --eval '(ql:quickload :cffi)' \
+  --eval '(ql:quickload :bordeaux-threads)' \
+  --eval '(ql:quickload :cl-fad)' \
+  --eval '(ql:quickload :cxml)' \
+  --eval '(ql:quickload :xmls)' \
+  --eval '(ql:quickload :fare-csv)' \
+  --eval '(ql:quickload :md5)'
+
+# Build the coma-json-server executable with buildapp
+RUN buildapp --output /usr/local/bin/coma-json-server \
+  --asdf-tree /root/coma-sci-backend \
+  --load-system coma-sci-backend \
+  --entry coma-json-server:main \
+  --compress-core \
+  || buildapp --output /usr/local/bin/coma-json-server \
+  --asdf-tree /root/coma-sci-backend \
+  --load-system coma-sci-backend \
+  --entry coma-json-server:start-server \
+  --compress-core
+
+# Make executable
+RUN chmod +x /usr/local/bin/coma-json-server
+
+# Set working directory
+WORKDIR /root
+
+# Set library path for runtime
+ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+
+# Expose port
+EXPOSE 8080
+
+# Start the server
+CMD ["/usr/local/bin/coma-json-server"]
 
