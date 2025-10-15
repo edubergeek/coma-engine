@@ -1,7 +1,14 @@
 FROM ubuntu:24.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends wget build-essential curl git ca-certificates
-RUN apt-get install -y gfortran libgfortran5 pgplot5 libfftw3-double3 libfftw3-single3
+RUN apt-get install -y gfortran libgfortran5 pgplot5 libfftw3-double3 libfftw3-single3 libfftw3-dev
+# Create symlinks for CFFI to find FFTW3 libraries
+RUN (ln -s /usr/lib/aarch64-linux-gnu/libfftw3.so /usr/lib/libfftw3.so || \
+  ln -s /usr/lib/x86_64-linux-gnu/libfftw3.so /usr/lib/libfftw3.so || true) && \
+  (ln -s /usr/lib/aarch64-linux-gnu/libfftw3f.so /usr/lib/libfftw3f.so || \
+  ln -s /usr/lib/x86_64-linux-gnu/libfftw3f.so /usr/lib/libfftw3f.so || true) && \
+  (ln -s /usr/lib/aarch64-linux-gnu/libfftw3l.so /usr/lib/libfftw3l.so || \
+  ln -s /usr/lib/x86_64-linux-gnu/libfftw3l.so /usr/lib/libfftw3l.so || true)
 # Additional libraries needed for compilation of cftisio quirks
 RUN apt-get install -y zlib1g-dev libcurl4-openssl-dev
 # Additional libraries from original dynamic-libraries (XPA, WCS)
@@ -116,6 +123,19 @@ WORKDIR /root
 # Copy the entire coma-sci-backend source tree (relative to COMA/ build context)
 COPY coma-sci-backend /root/coma-sci-backend
 
+# Create placeholder data files for build time (actual data provided via volume mounts at runtime)
+# These allow the Lisp system to load during buildapp without errors
+# Real data files will be in /data/support/sci-backend/catalogs (see docker-compose.yml)
+RUN mkdir -p /root/coma-sci-backend/astro/observatories/data && \
+  mkdir -p /root/coma-sci-backend/astro/small-body-name/data && \
+  touch /root/coma-sci-backend/astro/observatories/data/mpc-obs-codes.txt && \
+  touch /root/coma-sci-backend/astro/small-body-name/data/AllCometEls.txt && \
+  touch /root/coma-sci-backend/astro/small-body-name/data/numbered_comets.txt && \
+  touch /root/coma-sci-backend/astro/small-body-name/data/periodic_comets.csv && \
+  touch /root/coma-sci-backend/astro/small-body-name/data/asteroid_names.csv && \
+  echo "# Placeholder - actual data at runtime via /data/support/sci-backend/catalogs volume" > \
+  /root/coma-sci-backend/astro/observatories/data/mpc-obs-codes.txt
+
 # Install Quicklisp dependencies from qlfile
 WORKDIR /root/coma-sci-backend
 RUN sbcl --non-interactive \
@@ -131,19 +151,27 @@ RUN sbcl --non-interactive \
   --eval '(ql:quickload :cxml)' \
   --eval '(ql:quickload :xmls)' \
   --eval '(ql:quickload :fare-csv)' \
-  --eval '(ql:quickload :md5)'
+  --eval '(ql:quickload :md5)' \
+  --eval '(ql:quickload :salza2)'
 
 # Build the coma-json-server executable with buildapp
+# First try to load with debugging to get backtrace if it fails
+RUN sbcl --noinform --non-interactive \
+  --load /root/quicklisp/setup.lisp \
+  --eval '(asdf:initialize-source-registry (quote (:source-registry (:tree "/root/coma-sci-backend/") :inherit-configuration)))' \
+  --eval '(handler-bind ((error (lambda (c) (format t "~%~%ERROR: ~A~%~%BACKTRACE:~%" c) (sb-debug:print-backtrace :count 50) (sb-ext:exit :code 1)))) (asdf:load-system :coma-sci-backend))' \
+  && echo "System loaded successfully!" \
+  || (echo "Failed to load system - see backtrace above" && exit 1)
+
+# If loading succeeded, build with buildapp
 RUN buildapp --output /usr/local/bin/coma-json-server \
   --asdf-tree /root/coma-sci-backend \
   --load-system coma-sci-backend \
   --entry coma-json-server:main \
-  --compress-core \
   || buildapp --output /usr/local/bin/coma-json-server \
   --asdf-tree /root/coma-sci-backend \
   --load-system coma-sci-backend \
-  --entry coma-json-server:start-server \
-  --compress-core
+  --entry coma-json-server:start-server
 
 # Make executable
 RUN chmod +x /usr/local/bin/coma-json-server

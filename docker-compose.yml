@@ -2,8 +2,8 @@ services:
   sci-backend:
     platform: linux/amd64
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: ../..  # Temporary: allows COPY of coma-sci-backend (will use git clone later)
+      dockerfile: COMA/coma-engine/backend/Dockerfile
     image: sci-backend:latest
     container_name: sci-backend
     hostname: sci-backend
@@ -28,7 +28,8 @@ services:
       - ./data/support/sci-backend/cache:/data/support/sci-backend/cache
       - ./data/support/sci-backend/orbits:/data/support/sci-backend/orbits
       - ./data/support/sci-backend/work:/data/support/sci-backend/work
-      - ./.cache:/root/.cache
+      # NOTE: .cache volume mount removed - container needs build-time compiled libraries in /root/.cache
+      # - ./.cache:/root/.cache
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -36,7 +37,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    command: /root/coma-json-server
+    command: /usr/local/bin/coma-json-server
 
 networks:
   coma-sci_backend:
